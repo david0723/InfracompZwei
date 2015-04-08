@@ -42,6 +42,7 @@ public class Cliente
 	private PrintWriter out;
 	private InputStreamReader in;
 	private OutputStream raus;
+	private Socket socket;
 	
 	public Cliente (String xHost, int xPort) throws UnknownHostException, IOException
 	{
@@ -50,11 +51,11 @@ public class Cliente
 		System.out.println("Creating socket to '" + host + "' on port " + portNumber);
 
 
-			Socket socket = new Socket(host, portNumber);
-			in = new InputStreamReader(socket.getInputStream());
-			br = new BufferedReader(in);
-			raus = socket.getOutputStream();
-			out = new PrintWriter(raus);
+			socket = new Socket(host, portNumber);
+			
+			br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			out = new PrintWriter(socket.getOutputStream(), true);
+
 	}
 	public void init() throws IOException
 	{
@@ -73,6 +74,7 @@ public class Cliente
 		System.out.println("CERTCLNT");
 		java.security.cert.X509Certificate cert = generateSelfSignedX509Certificate();
 		byte[] mybyte = cert.getEncoded();
+		raus = socket.getOutputStream();
 		raus.write(mybyte);
 		raus.flush();
 		System.out.println("server says:" + br.readLine());
