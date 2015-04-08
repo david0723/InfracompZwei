@@ -3,6 +3,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.Socket;
@@ -15,9 +16,18 @@ import java.util.Date;
 import javax.crypto.Cipher;
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.asn1.DEREncodable;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import com.google.common.base.Strings;
 
@@ -26,10 +36,12 @@ public class Cliente
 {
 	private final static String ALGORITMO_A="RSA";
 	private final static String ALGORITMO_S="AES";
-	private final static String ALGORITMO_D="HMACSHA256";
+	private final static String ALGORITMO_D="HMACSHA1";
 	private KeyPair keyPair;
 	private BufferedReader br;
 	private PrintWriter out;
+	private InputStreamReader in;
+	private OutputStream raus;
 	
 	public Cliente (String xHost, int xPort) throws UnknownHostException, IOException
 	{
@@ -39,8 +51,10 @@ public class Cliente
 
 
 			Socket socket = new Socket(host, portNumber);
-			br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			out = new PrintWriter(socket.getOutputStream(), true);
+			in = new InputStreamReader(socket.getInputStream());
+			br = new BufferedReader(in);
+			raus = socket.getOutputStream();
+			out = new PrintWriter(raus);
 	}
 	public void init() throws IOException
 	{
@@ -56,13 +70,12 @@ public class Cliente
 	public void enviarCertificado() throws CertificateEncodingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException, SignatureException, IOException
 	{
 		out.println("CERTCLNT");
+		System.out.println("CERTCLNT");
 		java.security.cert.X509Certificate cert = generateSelfSignedX509Certificate();
 		byte[] mybyte = cert.getEncoded();
-		out.println(mybyte);
-		out.flush();
-System.out.println("esperar 1");
-			System.out.println("server says:" + br.readLine());
-			System.out.println("esperar 2");
+		raus.write(mybyte);
+		raus.flush();
+		System.out.println("server says:" + br.readLine());
 		
 	}
 	public byte[] cifrar() 
@@ -141,8 +154,7 @@ System.out.println("esperar 1");
      * deprecated {@link org.bouncycastle.x509.X509V1CertificateGenerator}.
      * </p>
      */
-    @SuppressWarnings("deprecation")
-    static X509Certificate generateSelfSignedX509Certificate() throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException,
+    public X509Certificate generateSelfSignedX509Certificate() throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException,
             SignatureException, InvalidKeyException, IOException {
 
         // yesterday
@@ -150,15 +162,16 @@ System.out.println("esperar 1");
         // in 2 years
         Date validityEndDate = new Date(System.currentTimeMillis() + 2 * 365 * 24 * 60 * 60 * 1000);
 
-        // GENERATE THE PUBLIC/PRIVATE RSA KEY PAIR
+        
+     // GENERATE THE PUBLIC/PRIVATE RSA KEY PAIR
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
         keyPairGenerator.initialize(1024, new SecureRandom());
 
         KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
         // GENERATE THE X509 CERTIFICATE
-        X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
-        X500Principal dnName = new X500Principal("CN=John Doe");
+        X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
+        X500Principal dnName = new X500Principal("CN=" + "username");
 
         certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
         certGen.setSubjectDN(dnName);
@@ -166,36 +179,35 @@ System.out.println("esperar 1");
         certGen.setNotBefore(validityBeginDate);
         certGen.setNotAfter(validityEndDate);
         certGen.setPublicKey(keyPair.getPublic());
-        certGen.setSignatureAlgorithm("SHA256WithRSA");
+        certGen.setSignatureAlgorithm("SHA1WithRSA");
+        
+        X509Certificate cert = certGen.generate(keyPair.getPrivate(), "BC");
+        
  
 
-        X509Certificate cert = certGen.generate(keyPair.getPrivate(), "BC");
+        // DUMP CERTIFICATE AND KEY PAIR
+        System.out.println(Strings.repeat("=", 80));
+        System.out.println("CERTIFICATE TO_STRING");
+        System.out.println(Strings.repeat("=", 80));
+        System.out.println();
+        System.out.println(cert);
+        System.out.println();
 
-//        // DUMP CERTIFICATE AND KEY PAIR
-//        System.out.println(Strings.repeat("=", 80));
-//        System.out.println("CERTIFICATE TO_STRING");
-//        System.out.println(Strings.repeat("=", 80));
-//        System.out.println();
-//        System.out.println(cert);
-//        System.out.println();
-//
-//        System.out.println(Strings.repeat("=", 80));
-//        System.out.println("CERTIFICATE PEM (to store in a cert-johndoe.pem file)");
-//        System.out.println(Strings.repeat("=", 80));
-//        System.out.println();
-//        PEMWriter pemWriter = new PEMWriter(new PrintWriter(System.out));
-//        pemWriter.writeObject(cert);
-//        pemWriter.flush();
-//        System.out.println();
-//
-//        System.out.println(Strings.repeat("=", 80));
-//        System.out.println("PRIVATE KEY PEM (to store in a priv-johndoe.pem file)");
-//        System.out.println(Strings.repeat("=", 80));
-//        System.out.println();
-//        pemWriter.writeObject(keyPair.getPrivate());
-//        pemWriter.flush();
-//        pemWriter.close();
-//        System.out.println();
+        System.out.println(Strings.repeat("=", 80));
+        System.out.println("CERTIFICATE PEM (to store in a cert-johndoe.pem file)");
+        System.out.println(Strings.repeat("=", 80));
+        System.out.println();
+        PEMWriter pemWriter = new PEMWriter(new PrintWriter(System.out));
+        pemWriter.writeObject(cert);
+        pemWriter.flush();
+        System.out.println();
+
+        System.out.println(Strings.repeat("=", 80));
+        System.out.println("PRIVATE KEY PEM (to store in a priv-johndoe.pem file)");
+        System.out.println(Strings.repeat("=", 80));
+        System.out.println();
+        pemWriter.writeObject(keyPair.getPrivate());
+        pemWriter.flush();
         
         return cert;
     }
