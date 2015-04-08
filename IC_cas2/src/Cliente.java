@@ -15,6 +15,8 @@ import java.util.Date;
 
 
 
+
+import javax.crypto.Cipher;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -119,8 +121,7 @@ public class Cliente
 			
 			while (true)
 			{
-				System.out.println("server:" + br.readLine());
-				System.out.println();
+				descifrar(br.readLine().getBytes());
 			}
 			
 //			System.out.println("server says:" + br.readLine());
@@ -202,6 +203,22 @@ public class Cliente
 //        pemWriter.flush();
         
  
+    }
+    public void descifrar(byte[] cipheredText) 
+    {
+    	System.out.println("descifrar");
+    	try 
+    	{
+    		Cipher cipher = Cipher.getInstance(ALGORITMO_A);
+    		cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate());
+    		byte [] clearText = cipher.doFinal(cipheredText);
+    		String s3 = new String(clearText);
+    		System.out.println("clave original: " + s3);
+    	}
+    	catch (Exception e) 
+    	{
+    		System.out.println("Excepcion: " + e.getMessage());
+    	}
     }
 
 }
