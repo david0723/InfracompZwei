@@ -16,22 +16,31 @@ public class playGround
 	public static void main(String args[]) throws IOException
 	{
 
-		Cliente cliente = new Cliente("localhost", 443);
-		cliente.init();
-		try 
-		{
-			cliente.enviarCertificado();
-		} 
-		catch (CertificateEncodingException e) {e.printStackTrace();}
-		catch (InvalidKeyException e)          {e.printStackTrace();} 
-		catch (NoSuchAlgorithmException e)     {e.printStackTrace();}
-		catch (NoSuchProviderException e)      {e.printStackTrace();}
-		catch (SignatureException e)           {e.printStackTrace();}
+//		Cliente cliente = new Cliente("localhost", 80);
+//		cliente.init();
+//		try 
+//		{
+//			cliente.enviarCertificado();
+//		} 
+//		catch (CertificateEncodingException e) {e.printStackTrace();}
+//		catch (InvalidKeyException e)          {e.printStackTrace();} 
+//		catch (NoSuchAlgorithmException e)     {e.printStackTrace();}
+//		catch (NoSuchProviderException e)      {e.printStackTrace();}
+//		catch (SignatureException e)           {e.printStackTrace();}
+//
+//			
 
+			Cliente client = new Cliente();
 			
-
-			
-			
+			try 
+			{
+				client.alles("localhost", 443);
+			} 
+			catch (CertificateEncodingException e) {e.printStackTrace();}
+			catch (InvalidKeyException          e) {e.printStackTrace();} 
+			catch (NoSuchAlgorithmException     e) {e.printStackTrace();}
+			catch (NoSuchProviderException      e) {e.printStackTrace();}
+			catch (SignatureException           e) {e.printStackTrace();}
 
 
 
